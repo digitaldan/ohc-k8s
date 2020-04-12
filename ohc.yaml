@@ -1,0 +1,206 @@
+apiVersion: v1
+kind: List
+items:
+- apiVersion: v1
+  kind: Service
+  metadata:
+    name: loadbalancer-service
+  spec:
+    selector:
+      org.openhab.cloud.service: nginx
+    ports:
+      - port: 80
+        targetPort: 80
+    type: LoadBalancer
+- apiVersion: v1
+  kind: Service
+  metadata:
+    name: main-app-service
+  spec:
+    clusterIP: None
+    selector:
+        org.openhab.cloud.service: main-app
+    ports:
+      - protocol: TCP
+        port: 3000
+        targetPort: 3000
+- apiVersion: v1
+  kind: Service
+  metadata:
+    name: proxy-app-service
+  spec:
+    clusterIP: None
+    selector:
+        org.openhab.cloud.service: proxy-app
+    ports:
+      - protocol: TCP
+        port: 3000
+        targetPort: 3000
+- apiVersion: v1
+  kind: Service
+  metadata:
+    name: nginx
+  spec:
+    selector:
+        org.openhab.cloud.service: nginx
+    ports:
+      - name: "http"
+        protocol: TCP
+        port: 80
+        targetPort: 80
+- apiVersion: v1
+  kind: Service
+  metadata:
+    name: mongodb
+  spec:
+    selector:
+        org.openhab.cloud.service: mongodb
+    ports:
+      - protocol: TCP
+        port: 27017
+        targetPort: 27017
+- apiVersion: v1
+  kind: Service
+  metadata:
+    name: redis
+  spec:
+    selector:
+        org.openhab.cloud.service: redis
+    ports:
+      - protocol: TCP
+        port: 6379
+        targetPort: 6379
+- apiVersion: apps/v1
+  kind: Deployment
+  metadata:
+    name: main-app-deployment
+  spec:
+    selector:
+      matchLabels:
+        org.openhab.cloud.service: main-app
+    replicas: 1
+    template:
+      metadata:
+        labels:
+          org.openhab.cloud.service: main-app
+      spec:
+        containers:
+        - image: openhabcloud-app
+          imagePullPolicy: IfNotPresent
+          name: main-app
+          ports:
+          - containerPort: 3000
+          resources: {}
+          workingDir: /opt/openhabcloud
+          env:
+          - name: PORT
+            value: "3000"
+          - name: HOST
+            valueFrom:
+              fieldRef:
+                apiVersion: v1
+                fieldPath: status.podIP
+- apiVersion: apps/v1
+  kind: Deployment
+  metadata:
+    name: proxy-app-deployment
+  spec:
+    selector:
+      matchLabels:
+        org.openhab.cloud.service: proxy-app
+    replicas: 4
+    template:
+      metadata:
+        labels:
+          org.openhab.cloud.service: proxy-app
+      spec:
+        containers:
+        - image: openhabcloud-app
+          imagePullPolicy: IfNotPresent
+          name: proxy-app
+          ports:
+          - containerPort: 3000
+          resources: {}
+          workingDir: /opt/openhabcloud
+          env:
+          - name: PORT
+            value: "3000"
+          - name: HOST
+            valueFrom:
+              fieldRef:
+                apiVersion: v1
+                fieldPath: status.podIP
+- apiVersion: apps/v1
+  kind: Deployment
+  metadata:
+    name: nginx
+  spec:
+    selector:
+      matchLabels:
+        org.openhab.cloud.service: nginx
+    replicas: 2
+    template:
+      metadata:
+        labels:
+          org.openhab.cloud.service: nginx
+      spec:
+        containers:
+        - name: nginx
+          image: ohc-nginx
+          imagePullPolicy: IfNotPresent
+          ports:
+          - containerPort: 80
+- apiVersion: apps/v1
+  kind: Deployment
+  metadata:
+    name: mongodb
+  spec:
+    selector:
+      matchLabels:
+        org.openhab.cloud.service: mongodb
+    replicas: 1
+    template:
+      metadata:
+        labels:
+          org.openhab.cloud.service: mongodb
+      spec:
+        containers:
+        - name: mongodb
+          image: bitnami/mongodb:latest
+          ports:
+          - containerPort: 27017
+          resources: {}
+          volumeMounts:
+          - mountPath: /data/db
+            name: mongodb-empty0
+          - mountPath: /data/configdb
+            name: mongodb-empty1
+        restartPolicy: Always
+        volumes:
+        - emptyDir: {}
+          name: mongodb-empty0
+        - emptyDir: {}
+          name: mongodb-empty1
+- apiVersion: apps/v1
+  kind: Deployment
+  metadata:
+    name: redis
+  spec:
+    selector:
+      matchLabels:
+        org.openhab.cloud.service: redis
+    replicas: 1
+    template:
+      metadata:
+        labels:
+          org.openhab.cloud.service: redis
+      spec:
+        containers:
+        - env:
+          - name: REDIS_PASSWORD
+            value: 123_openHAB
+          image: redis
+          name: redis
+          ports:
+          - containerPort: 6379
+    
