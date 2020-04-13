@@ -49,3 +49,9 @@ kubectl create -f ohc.yaml --namespace $KUBERNETES_NAMESPACE
 echo Creating openHAB-cloud from template ... done!
 
 echo DEPLOYED OPENHAB-CLOUD TO KUBERNETES
+
+export POD_NAME=$(kubectl get pods -n default -l "app=kubernetes-dashboard,release=dashboard" -o jsonpath="{.items[0].metadata.name}")
+
+echo "https://localhost:8443"
+
+kubectl -n default port-forward $POD_NAME 8443:8443

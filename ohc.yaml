@@ -9,7 +9,7 @@ items:
     selector:
       org.openhab.cloud.service: nginx
     ports:
-      - port: 80
+      - port: 8081
         targetPort: 80
     type: LoadBalancer
 - apiVersion: v1
@@ -78,7 +78,7 @@ items:
     selector:
       matchLabels:
         org.openhab.cloud.service: main-app
-    replicas: 1
+    replicas: 4
     template:
       metadata:
         labels:
@@ -151,10 +151,11 @@ items:
           ports:
           - containerPort: 80
 - apiVersion: apps/v1
-  kind: Deployment
+  kind: StatefulSet
   metadata:
     name: mongodb
   spec:
+    serviceName: "mongo"
     selector:
       matchLabels:
         org.openhab.cloud.service: mongodb
@@ -164,23 +165,23 @@ items:
         labels:
           org.openhab.cloud.service: mongodb
       spec:
-        containers:
-        - name: mongodb
-          image: bitnami/mongodb:latest
-          ports:
-          - containerPort: 27017
-          resources: {}
-          volumeMounts:
-          - mountPath: /data/db
-            name: mongodb-empty0
-          - mountPath: /data/configdb
-            name: mongodb-empty1
-        restartPolicy: Always
+        terminationGracePeriodSeconds: 10
         volumes:
-        - emptyDir: {}
-          name: mongodb-empty0
-        - emptyDir: {}
-          name: mongodb-empty1
+          - name: mongo-pv-storage
+            persistentVolumeClaim:
+              claimName: mongo-pv-claim
+        containers:
+          - name: mongo
+            image: mongo
+            command:
+              - mongod
+              - "--bind_ip"
+              - 0.0.0.0
+            ports:
+              - containerPort: 27017
+            volumeMounts:
+              - name: mongo-pv-storage
+                mountPath: /data/db
 - apiVersion: apps/v1
   kind: Deployment
   metadata:
@@ -189,6 +190,8 @@ items:
     selector:
       matchLabels:
         org.openhab.cloud.service: redis
+    strategy:
+      type: Recreate
     replicas: 1
     template:
       metadata:
@@ -203,4 +206,28 @@ items:
           name: redis
           ports:
           - containerPort: 6379
+        restartPolicy: Always
+- apiVersion: v1
+  kind: PersistentVolume
+  metadata:
+    name: mongo-pv
+  spec:
+    storageClassName: manual
+    capacity:
+      storage: 1Gi
+    accessModes:
+      - ReadWriteOnce
+    hostPath:
+      path: "/tmp/ohc-mongo-data"
+- apiVersion: v1
+  kind: PersistentVolumeClaim
+  metadata:
+    name: mongo-pv-claim
+  spec:
+    storageClassName: manual
+    accessModes:
+      - ReadWriteOnce
+    resources:
+      requests:
+        storage: 1Gi
     
