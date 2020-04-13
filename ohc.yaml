@@ -183,29 +183,34 @@ items:
               - name: mongo-pv-storage
                 mountPath: /data/db
 - apiVersion: apps/v1
-  kind: Deployment
+  kind: StatefulSet
   metadata:
     name: redis
   spec:
+    serviceName: "redis"
     selector:
       matchLabels:
         org.openhab.cloud.service: redis
-    strategy:
-      type: Recreate
     replicas: 1
     template:
       metadata:
         labels:
           org.openhab.cloud.service: redis
       spec:
+        terminationGracePeriodSeconds: 10
+        volumes:
+          - name: redis-pv-storage
+            persistentVolumeClaim:
+              claimName: redis-pv-claim
         containers:
-        - env:
-          - name: REDIS_PASSWORD
-            value: 123_openHAB
-          image: redis
-          name: redis
-          ports:
-          - containerPort: 6379
+          - name: redis
+            image: redis
+            args: ["--appendonly", "yes"]
+            ports:
+              - containerPort: 6379
+            volumeMounts:
+              - name: redis-pv-storage
+                mountPath: /data
 - apiVersion: v1
   kind: PersistentVolume
   metadata:
@@ -229,4 +234,28 @@ items:
     resources:
       requests:
         storage: 1Gi
+- apiVersion: v1
+  kind: PersistentVolume
+  metadata:
+    name: redis-pv
+  spec:
+    storageClassName: manual
+    capacity:
+      storage: 1Gi
+    accessModes:
+      - ReadWriteOnce
+    hostPath:
+      path: "/tmp/ohc-redis-data"
+- apiVersion: v1
+  kind: PersistentVolumeClaim
+  metadata:
+    name: redis-pv-claim
+  spec:
+    storageClassName: manual
+    accessModes:
+      - ReadWriteOnce
+    resources:
+      requests:
+        storage: 1Gi
+
     
