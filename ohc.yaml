@@ -206,7 +206,6 @@ items:
           name: redis
           ports:
           - containerPort: 6379
-        restartPolicy: Always
 - apiVersion: v1
   kind: PersistentVolume
   metadata:

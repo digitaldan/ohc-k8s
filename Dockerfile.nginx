@@ -8,4 +8,5 @@ MAINTAINER openHAB
 RUN rm /etc/nginx/conf.d/default.conf 
 COPY ./nginx/nginx-ohc.conf /etc/nginx/conf.d/
 COPY ./nginx/nginx-ohc-proxy.include /etc/nginx/
+COPY ./nginx/nginx-ohc-redirects.include /etc/nginx/
 COPY ./openhab-cloud/public /var/www/html
