@@ -26,8 +26,8 @@ then
     git clone https://github.com/openhab/openhab-cloud.git
 fi
 
-docker build -t openhabcloud-app -f Dockerfile.ohc ./openhab-cloud
-docker build -t ohc-nginx -f Dockerfile.nginx ./
+#docker build -t openhabcloud-app -f Dockerfile.ohc ./openhab-cloud
+#docker build -t ohc-nginx -f Dockerfile.nginx ./
 
 echo DEPLOYING OPENHAB-CLOUD TO KUBERNETES
 
