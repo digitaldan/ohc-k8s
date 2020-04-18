@@ -1,0 +1,45 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+  labels:
+    app: "{{ .Release.Name }}-{{ .Chart.Name }}"
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+    name: "{{ .Release.Name }}-{{ .Chart.Name }}"
+spec:
+  selector:
+    matchLabels:
+      run: "{{ .Release.Name }}-{{ .Chart.Name }}"
+  template:
+    metadata:
+      labels:
+        app: "{{ .Release.Name }}-{{ .Chart.Name }}"
+        release: "{{ .Release.Name }}"
+        run: "{{ .Release.Name }}-{{ .Chart.Name }}"
+    spec:
+      imagePullSecrets:
+        - name: {{ .Values.image.secret }}
+      containers:
+      - name: "{{ .Release.Name }}-openhab-cloud"
+        image: "{{ .Values.image.registry }}/{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+        imagePullPolicy: Always
+        env:
+        - name: MONGODB_HOSTS
+          value: ${{ .Release.Name | upper | replace "-" "_" }}_MONGODB_SERVICE_HOST
+        - name: MONGODB_USER
+          value: {{ .Values.mongodb.mongodbUsername }}
+        - name: MONGODB_PASSWORD
+          value: {{ .Values.mongodb.mongodbPassword }}
+        - name: REDIS_HOST
+          value: ${{ .Release.Name | upper | replace "-" "_" }}_REDIS_MASTER_SERVICE_HOST
+        - name: REDIS_PORT
+          value: ${{ .Release.Name | upper | replace "-" "_" }}_REDIS_MASTER_SERVICE_PORT
+        - name: REDIS_PASSWORD
+          value: {{ .Values.redis.password}}
+        - name: REGISTRATION_ENABLED
+          value: "{{ .Values.registration.enabled}}"
+        ports:
+        - name: rest
+          containerPort: 3000

@@ -1,0 +1,18 @@
+apiVersion: certmanager.k8s.io/v1alpha1
+kind: Certificate
+metadata:
+  name: {{ template "ingress.host.effective" . }}
+  namespace: default
+spec:
+  secretName: {{ template "ingress.host.effective" . }}
+  issuerRef:
+    name: letsencrypt
+  commonName: {{ template "ingress.host.effective" . }}
+  dnsNames:
+  - {{ template "ingress.host.effective" . }}
+  acme:
+    config:
+    - http01:
+        ingressClass: nginx
+      domains:
+      - {{ template "ingress.host.effective" . }}
