@@ -70,7 +70,7 @@ data:
           port_value: 9901
     static_resources:
       listeners:
-      - name: listener_0
+      - name: listener_http
         address:
           socket_address:
             address: 0.0.0.0
@@ -88,9 +88,36 @@ data:
                 upgrade_type: "websocket"
               stat_prefix: ingress_http
               route_config:
-                name: local_route
+                name: local_route_http
                 virtual_hosts:
-                - name: local_service
+                - name: local_service_http
+                  domains: ["*"]
+                  routes:
+                  - match: { prefix: "/" }
+                    redirect: { https_redirect: true }
+              http_filters:
+              - name: envoy.router
+      - name: listener_https
+        address:
+          socket_address:
+            address: 0.0.0.0
+            port_value: 81
+        filter_chains:
+        - use_proxy_proto: true
+          filters:
+          - name: envoy.http_connection_manager
+            config:
+              access_log:
+              - name: envoy.file_access_log
+                config:
+                  path: "/dev/stdout"
+              upgrade_configs:
+                upgrade_type: "websocket"
+              stat_prefix: ingress_http
+              route_config:
+                name: local_route_https
+                virtual_hosts:
+                - name: local_service_https
                   domains: ["*"]
                   routes:
                   - match:
@@ -113,7 +140,7 @@ data:
         connect_timeout: 0.25s
         type: STRICT_DNS
         dns_lookup_family: V4_ONLY
-        lb_policy: RING_HASH
+        lb_policy: LEAST_REQUEST
         hosts: [{ socket_address: { address: web-app, port_value: 3000 }}]
       - name: proxy_app_cluster
         connect_timeout: 0.25s

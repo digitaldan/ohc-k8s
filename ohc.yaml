@@ -11,7 +11,11 @@ items:
     selector:
       app: envoy
     ports:
-      - port: 443
+      - name: https
+        port: 443
+        targetPort: 81
+      - name: http
+        port: 80
         targetPort: 80
     type: LoadBalancer
 - apiVersion: v1
