@@ -1,0 +1,21 @@
+image:
+  registry: docker.io
+  repository: openhab/openhabcloud-app
+  tag: 1.0.11
+mongodb:
+  persistence:
+    enabled: true
+    storageClass: local-storage
+  mongodbDatabase: openhab
+  mongodbUsername: openhab
+  mongodbPassword: openhab
+redis:
+  cluster:
+    enabled: false
+  password: openhab
+  master:
+    persistence:
+      enabled: true
+      storageClass: local-storage
+registration:
+  enabled: false
